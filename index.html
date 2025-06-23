@@ -2,26 +2,25 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Roue de sélection</title>
+    <title>Roue de sélection avec historique</title>
+    <style>
+        #history {
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
     <h1>Roue de sélection</h1>
     <div id="wheelContainer"></div>
-    <button onclick="resetSelections()">Réinitialiser les sélections</button>
+    <button onclick="saveSelection()">Enregistrer la sélection</button>
+    <div id="history"></div>
 
     <script>
-    let participants;
+    const participants = ["Antoine", "Isabelle", "Steve", "Kemodjan", "Manuel", "Veronique", "Marie", "Constant", "Beatrice", "Hanae", "Tristan"];
+    let selectionHistory = [];
 
-    async function loadParticipants() {
-        const response = await fetch('participants.json');
-        const data = await response.json();
-        participants = data.participants;
-        updateWheel();
-    }
-
-    function updateWheel() {
-        const availableParticipants = participants.filter(p => !p.selected).map(p => p.name);
-        const choicesString = availableParticipants.join(',');
+    function initWheel() {
+        const choicesString = participants.join(',');
         const wheelUrl = `https://pickerwheel.com/emb/?choices=${choicesString}`;
         
         const iframe = document.createElement('iframe');
@@ -29,39 +28,68 @@
         iframe.width = "500";
         iframe.height = "500";
         iframe.frameBorder = "0";
+        iframe.id = "pickerWheel";
 
         const container = document.getElementById('wheelContainer');
         container.innerHTML = '';
         container.appendChild(iframe);
     }
 
-    function selectParticipant(name) {
-        const participant = participants.find(p => p.name === name);
-        if (participant) {
-            participant.selected = true;
-            updateJSON();
-            updateWheel();
+    async function loadHistory() {
+        try {
+            const response = await fetch('selection_history.json');
+            const data = await response.json();
+            selectionHistory = data.history;
+            updateHistoryDisplay();
+        } catch (error) {
+            console.error("Erreur lors du chargement de l'historique:", error);
         }
     }
 
-    function resetSelections() {
-        participants.forEach(p => p.selected = false);
+    function saveSelection() {
+        const wheelFrame = document.getElementById('pickerWheel');
+        const selectedName = wheelFrame.contentWindow.document.querySelector('.wheel-item.selected .wheel-item-text').textContent;
+        
+        const now = new Date();
+        const selection = {
+            name: selectedName,
+            date: now.toISOString()
+        };
+        
+        selectionHistory.push(selection);
+        updateHistoryDisplay();
         updateJSON();
-        updateWheel();
+    }
+
+    function updateHistoryDisplay() {
+        const historyDiv = document.getElementById('history');
+        historyDiv.innerHTML = '<h2>Historique des sélections</h2>';
+        const ul = document.createElement('ul');
+        selectionHistory.forEach(selection => {
+            const li = document.createElement('li');
+            li.textContent = `${selection.name} - ${new Date(selection.date).toLocaleString()}`;
+            ul.appendChild(li);
+        });
+        historyDiv.appendChild(ul);
     }
 
     async function updateJSON() {
-        const response = await fetch('update-json-endpoint', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ participants }),
-        });
-        // Gérer la réponse si nécessaire
+        try {
+            const response = await fetch('update-history-endpoint', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ history: selectionHistory }),
+            });
+            // Gérer la réponse si nécessaire
+        } catch (error) {
+            console.error("Erreur lors de la mise à jour de l'historique:", error);
+        }
     }
 
-    loadParticipants();
+    initWheel();
+    loadHistory();
     </script>
 </body>
 </html>
