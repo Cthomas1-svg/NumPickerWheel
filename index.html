@@ -1,21 +1,67 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Picker Wheel Integration</title>
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <title>Roue de sélection</title>
 </head>
-
 <body>
-  <h1>Choisir le prochain animateur</h1>
-  <button onclick="choisirAnimateur()">Choisir un animateur</button>
-  <div id="animateur"></div>
+    <h1>Roue de sélection</h1>
+    <div id="wheelContainer"></div>
+    <button onclick="resetSelections()">Réinitialiser les sélections</button>
 
-  <iframe id="pickerWheel" src="https://pickerwheel.com/emb/?choices=Antoine,Isabelle,Steve,Kemodjan,Manuel,Veronique,Marie,Constant,Beatrice,Hanae,Tristan" width="100%" height="550px" scrolling="no" frameborder="0"></iframe>
+    <script>
+    let participants;
 
-  <script src="scripts.js"></script>
+    async function loadParticipants() {
+        const response = await fetch('participants.json');
+        const data = await response.json();
+        participants = data.participants;
+        updateWheel();
+    }
+
+    function updateWheel() {
+        const availableParticipants = participants.filter(p => !p.selected).map(p => p.name);
+        const choicesString = availableParticipants.join(',');
+        const wheelUrl = `https://pickerwheel.com/emb/?choices=${choicesString}`;
+        
+        const iframe = document.createElement('iframe');
+        iframe.src = wheelUrl;
+        iframe.width = "500";
+        iframe.height = "500";
+        iframe.frameBorder = "0";
+
+        const container = document.getElementById('wheelContainer');
+        container.innerHTML = '';
+        container.appendChild(iframe);
+    }
+
+    function selectParticipant(name) {
+        const participant = participants.find(p => p.name === name);
+        if (participant) {
+            participant.selected = true;
+            updateJSON();
+            updateWheel();
+        }
+    }
+
+    function resetSelections() {
+        participants.forEach(p => p.selected = false);
+        updateJSON();
+        updateWheel();
+    }
+
+    async function updateJSON() {
+        const response = await fetch('update-json-endpoint', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ participants }),
+        });
+        // Gérer la réponse si nécessaire
+    }
+
+    loadParticipants();
+    </script>
 </body>
-
 </html>
