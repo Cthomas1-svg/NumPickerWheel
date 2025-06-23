@@ -1,0 +1,14 @@
+{
+  "participants": [
+    {"name": "Antoine", "selected": false},
+    {"name": "Isabelle", "selected": false},
+    {"name": "Steve", "selected": false},
+    {"name": "Kemodjan", "selected": false},
+    {"name": "Manuel", "selected": false},
+    {"name": "Veronique", "selected": false},
+    {"name": "Marie", "selected": false},
+    {"name": "Constant", "selected": false},
+    {"name": "Beatrice", "selected": false},
+    {"name": "Tristan", "selected": false}
+  ]
+}
